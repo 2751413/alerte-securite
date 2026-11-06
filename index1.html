@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alerte de sécurité</title>
+<style>
+  :root { --bg:#0B1220; --card:#131C2E; --red:#E74C3C; --green:#00E09E; --text:#FFFFFF; --muted:#A9B4C8; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; }
+  body { background:var(--bg); color:var(--text); font-family:"Courier New", monospace; display:flex; align-items:center; justify-content:center; padding:24px; overflow:hidden; }
+  .screen { width:100%; max-width:420px; text-align:center; display:none; }
+  .screen.active { display:block; }
+  #hack.active { animation:shake .5s ease-in-out 3; }
+  body.alarm { animation:flash 0.6s steps(2) 4; }
+  @keyframes flash { 0%{background:#3a0b0b;} 100%{background:var(--bg);} }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-10px);} 40%{transform:translateX(10px);} 60%{transform:translateX(-8px);} 80%{transform:translateX(8px);} }
+  .skull { font-size:72px; line-height:1; margin-bottom:18px; }
+  h1 { font-size:26px; color:var(--red); margin-bottom:14px; text-transform:uppercase; letter-spacing:1px; }
+  p { color:var(--muted); font-size:15px; line-height:1.5; }
+  .box { background:var(--card); border:1px solid var(--red); border-radius:10px; padding:22px 18px; margin-top:22px; }
+  button { margin-top:18px; width:100%; padding:14px; font-family:inherit; font-size:18px; font-weight:bold; color:#fff; background:var(--red); border:none; border-radius:8px; cursor:pointer; }
+  button:active { transform:scale(.98); }
+  .bar { width:100%; height:22px; background:#1E2A40; border-radius:11px; overflow:hidden; margin:22px 0 10px; border:1px solid #2b3a57; }
+  .fill { height:100%; width:0%; background:var(--red); transition:width .2s linear; }
+  #pct { font-size:28px; font-weight:bold; color:var(--red); }
+  #step { margin-top:12px; min-height:22px; color:var(--text); font-size:14px; }
+  .log { margin-top:16px; text-align:left; font-size:12px; color:var(--green); min-height:110px; }
+  #fin h1 { color:var(--green); }
+  .shield { font-size:64px; margin-bottom:16px; }
+  .tips { text-align:left; margin-top:20px; background:var(--card); border-radius:10px; padding:16px 18px; border:1px solid var(--green); }
+  .tips li { color:var(--muted); font-size:14px; line-height:1.5; margin:6px 0 6px 16px; }
+  .credit { margin-top:18px; font-size:11px; color:#7C8BA6; }
+</style>
+</head>
+<body>
+
+<section id="hack" class="screen active">
+  <div class="skull">☠</div>
+  <h1>Vous vous êtes fait hacker !</h1>
+  <p>Votre appareil a été compromis. Un accès à distance est en cours d'établissement.</p>
+  <div class="box">
+    <p>Pour interrompre l'opération, appuyez sur Annuler.</p>
+    <button id="annuler" type="button">Annuler</button>
+  </div>
+</section>
+
+<section id="extraction" class="screen">
+  <h1>Extraction des données</h1>
+  <p>Annulation impossible. Transfert en cours…</p>
+  <div class="bar"><div class="fill" id="fill"></div></div>
+  <div id="pct">0 %</div>
+  <div id="step">Connexion au serveur distant…</div>
+  <div class="log" id="log"></div>
+</section>
+
+<section id="fin" class="screen">
+  <div class="shield">🛡️</div>
+  <h1>Ceci était une simulation</h1>
+  <p>Aucune donnée n'a été lue ni envoyée. Soyez prudent la prochaine fois !</p>
+  <ul class="tips">
+    <li>Ne scannez pas un code QR dont vous ignorez l'origine.</li>
+    <li>Vérifiez l'adresse du site avant de l'ouvrir.</li>
+    <li>Un bouton « Annuler » sur une page suspecte peut lui aussi être un piège.</li>
+  </ul>
+  <div class="credit">Démonstration éducative · Projet « Défense contre les virus »</div>
+</section>
+
+<script>
+  function vibrer(motif) {
+    try { if (navigator.vibrate) navigator.vibrate(motif); } catch (e) {}
+  }
+  function afficher(id) {
+    document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
+    document.getElementById(id).classList.add('active');
+  }
+
+  // Tentative de vibration à l'ouverture (souvent bloquée tant que la personne n'a pas touché l'écran)
+  document.body.classList.add('alarm');
+  vibrer([400, 150, 400, 150, 800]);
+  // Dès le premier contact avec l'écran, on relance la vibration
+  document.addEventListener('pointerdown', function premier() {
+    vibrer([300, 100, 300]);
+    document.removeEventListener('pointerdown', premier);
+  });
+
+  var etapes = [
+    [0,  "Connexion au serveur distant…"],
+    [12, "Copie des contacts…"],
+    [30, "Copie des photos…"],
+    [50, "Lecture des messages…"],
+    [68, "Récupération des mots de passe enregistrés…"],
+    [85, "Envoi de l'archive…"],
+    [98, "Effacement des traces…"]
+  ];
+
+  document.getElementById('annuler').addEventListener('click', function () {
+    vibrer([200, 100, 200, 100, 600]);
+    afficher('extraction');
+    var duree = 10000, debut = Date.now(), dernier = -1;
+    var log = document.getElementById('log');
+    var timer = setInterval(function () {
+      var p = Math.min(100, Math.floor((Date.now() - debut) / duree * 100));
+      document.getElementById('fill').style.width = p + '%';
+      document.getElementById('pct').textContent = p + ' %';
+      for (var i = etapes.length - 1; i >= 0; i--) {
+        if (p >= etapes[i][0]) {
+          if (i !== dernier) {
+            dernier = i;
+            document.getElementById('step').textContent = etapes[i][1];
+            log.innerHTML += '&gt; ' + etapes[i][1].replace('…', '') + ' [OK]<br>';
+            vibrer(120);
+          }
+          break;
+        }
+      }
+      if (p >= 100) {
+        clearInterval(timer);
+        setTimeout(function () { vibrer([100, 80, 100]); afficher('fin'); }, 400);
+      }
+    }, 100);
+  });
+</script>
+</body>
+</html>
